@@ -1,0 +1,3 @@
+Requires wiringPi - http://wiringpi.com/ and a raspberry Pi......
+
+To compile gcc -o sfppi-generic sfppi-generic.c -lwiringPi
