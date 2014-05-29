@@ -33,7 +33,7 @@ int dump(char *filename);
 int read_eeprom(void);
 int read_sfp(void);
 int xio,write_checksum;
-unsigned char A50[128]; //only interested in the first 128 bytes
+unsigned char A50[256]; //only interested in the first 128 bytes
 
 int main (int argc, char *argv[])
 {
