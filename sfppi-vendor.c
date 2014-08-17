@@ -1,6 +1,9 @@
 /*
-*       sfppi-vendor.c:
-*	to compile gcc -o sfpp-vendor sfppi-vendor.c -lwiringPi -lcrypto -lz
+*       sfppi-vendor.c
+*
+* 	Author - eoinpk.ek@gmail.com
+*
+*	To compile gcc -o sfpp-vendor sfppi-vendor.c -lwiringPi -lcrypto -lz
 *
 *       sfppi-vendor is free software: you can redistribute it and/or modify
 *       it under the terms of the GNU Lesser General Public License as

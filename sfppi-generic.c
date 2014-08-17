@@ -1,6 +1,9 @@
 /*
-* 	sfppi-generic.c:
-*	to compile gcc -o sfppi-generic sfppi-generic.c -lwiringPi
+* 	sfppi-generic.c
+* 	
+* 	Copyright(c) 2014 eoinpk.ek@gmail.com
+*
+*	To compile gcc -o sfppi-generic sfppi-generic.c -lwiringPi
 *
 *	sfppi-generic is free software: you can redistribute it and/or modify
 *	it under the terms of the GNU Lesser General Public License as
