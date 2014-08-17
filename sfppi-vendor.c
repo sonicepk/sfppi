@@ -1,20 +1,20 @@
 /*
-* 	sfppi-generic.c:
-*	to compile gcc -o sfppi-generic sfppi-generic.c -lwiringPi
+*       sfppi-vendor.c:
+*	to compile gcc -o sfpp-vendor sfppi-vendor.c -lwiringPi -lcrypto -lz
 *
-*	sfppi-generic is free software: you can redistribute it and/or modify
-*	it under the terms of the GNU Lesser General Public License as
-*	published by the Free Software Foundation, either version 3 of the
-*	License, or (at your option) any later version.
+*       sfppi-vendor is free software: you can redistribute it and/or modify
+*       it under the terms of the GNU Lesser General Public License as
+*       published by the Free Software Foundation, either version 3 of the
+*       License, or (at your option) any later version.
 *
-*	sfppi-generic is distributed in the hope that it will be useful,
-*	but WITHOUT ANY WARRANTY; without even the implied warranty of
-*	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*	GNU Lesser General Public License for more details.
+*       sfppi-vendor is distributed in the hope that it will be useful,
+*       but WITHOUT ANY WARRANTY; without even the implied warranty of
+*       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*       GNU Lesser General Public License for more details.
 *
-*	You should have received a copy of the GNU Lesser General Public
-*	License along with sfppi-generic.
-*	If not, see <http://www.gnu.org/licenses/>.
+*       You should have received a copy of the GNU Lesser General Public
+*       License along with sfppi-generic.
+*       If not, see <http://www.gnu.org/licenses/>.
 ***********************************************************************
 */
 
@@ -22,15 +22,18 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wiringPi.h>
-#include <wiringPiI2C.h>
+#include <wiringPiI2C.h>//wrapper for I2C
+#include <zlib.h>//for CRC32
+#include <openssl/evp.h> //for MD5
 #include <errno.h>
-#include <unistd.h>
+#include <unistd.h> //usleep
 
 #define VERSION 0.1
 
 int mychecksum(unsigned char start_byte, unsigned char end_byte);
 int dump(char *filename);
 int read_eeprom(void);
+int vendor_fy(void);
 int read_sfp(void);
 int xio,write_checksum;
 unsigned char A50[256]; //only interested in the first 128 bytes
@@ -47,6 +50,7 @@ int main (int argc, char *argv[])
 		case 'c':
 			write_checksum = 1;
 			read_sfp();
+			vendor_fy();
 			break;
 		case 'd':
 			dump(optarg);
@@ -55,7 +59,7 @@ int main (int argc, char *argv[])
 			fprintf(stderr,
 			"Usage: %s\n"
 			"	-r read the sfp or sfp+\n"
-			"	-c calculate checksums bytes\n"
+			"	-c calculate and write Vendor bytes\n"
 			"	-d filename - dump the eprom to a file\n"
 			,argv[0]);
 			exit(EXIT_FAILURE);
@@ -65,7 +69,7 @@ int main (int argc, char *argv[])
 			fprintf(stderr,
 			"Usage: %s\n"
 			"	-r read the sfp or sfp+\n"
-			"	-c calculate checksum bytes\n"
+			"	-c calculate and write Vendor bytes\n"
 			"	-d filename - save the eprom to a file\n"
 			,argv[0]);
 			exit(EXIT_FAILURE);
@@ -96,7 +100,7 @@ int read_sfp(void)
                 "SG",
                 "Optical pigtail"};
 
-	printf("sfppi-generic Version:%0.1f\n\n",VERSION);
+	printf("SFPpi Version:%0.1f\n\n",VERSION);
 
 	//Copy eeprom SFP details into A50
 	if(!read_eeprom()); else exit(EXIT_FAILURE);
@@ -143,6 +147,7 @@ int read_sfp(void)
 	date[8] = '\0';
 	printf("\ndate = %s", date);
 
+	if(!write_checksum){
 	//Calculate the checksum: Add up the first 31 bytes and store
 	//the last 8 bits in the 32nd byte
 	mychecksum(0x0, 0x3f);
@@ -150,7 +155,7 @@ int read_sfp(void)
 	//Calculate the extended checksum: Add up 31 bytes and store
 	//the last 8 bits in the 32nd byte
 	mychecksum(0x40, 0x5f);
-
+	}
   return 0;
 }
 
@@ -175,7 +180,7 @@ int dump(char *filename)
         printf ("Dump eeprom contents to %s\n",filename) ;
         fprintf(fp,"     0   1   2   3   4   5   6   7   8   9   a   b  "
 		       " c   d   e   f   0123456789abcdef");
-        while (counter < 0x100){ //address 0 to 95
+        while (counter < 0x100){ //address 0 to 255
 		if ((counter % 0x10) == 0){
                        index_end = counter;
                         fprintf(fp,"  ");
@@ -203,32 +208,6 @@ int dump(char *filename)
         return 0;
 }
 
-int mychecksum(unsigned char start_byte, unsigned char end_byte)
-{
-	int sum = 0;
-	int counter;
-	int cc_base;
-	for (counter = start_byte; counter <end_byte; counter++)
-	sum = (A50[counter] + sum);
-	sum = sum & 0x0ff;
-	cc_base = A50[end_byte]; //sum stored in address 63 or 95.
-	if (start_byte == 0x0) printf("\ncc_base = %x, sum = %x",cc_base,sum);
-	else printf("\nextended cc_base = %x and sum= %x\n",cc_base,sum);
-		if (cc_base != sum && write_checksum){
-			printf("\nCheck Sum failed, Do you want to write the"
-			       "	checksum value %x to address byte \"%x\" ?"
-			       "	(Y/N)", sum, end_byte);
-			int ch = 0;
-			ch = getchar();
-			getchar();
-			if ((ch == 'Y') || (ch == 'y')) {
-				printf("yes\n");
-				wiringPiI2CWriteReg8(xio, end_byte, sum);
-			} else printf("nothing written\n");
-		}
-		return 0;
-}
-
 int read_eeprom(void)
 {
 	int xio,i,fd1;
@@ -250,3 +229,160 @@ int read_eeprom(void)
 	}
 	return 0;
 }
+
+int vendor_fy(void)
+{
+	//You need to add a valid 16 byte vendor key in Hex
+	unsigned char vendor_key1[16] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+					0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+	unsigned char man_id[49];
+	unsigned long crc_32;
+	unsigned char vendor_crc[4];
+	unsigned char vendor_id[16];
+	unsigned char serial_id[16];
+	int i;
+
+	//Copy eeprom SFP details into A50
+	if(!read_eeprom()); else exit(EXIT_FAILURE);
+
+	memcpy(&vendor_id, &A50[20],16);
+	memcpy(&serial_id, &A50[68],16);
+
+	//vendor_tmp holds = man_id 1 byte + 16 byte vendor + 16 byte serial + 
+	//  16 byte vendor_key1
+	man_id[0] = 0x00; //You need to provide a manufacturer id number. 
+	for(i = 1; i <17; i++)
+		man_id[i] = vendor_id[i-1];
+	for(i = 17; i <33; i++)
+		man_id[i] = serial_id[i-17];
+	for(i = 33; i <49; i++)
+		man_id[i] = vendor_key1[i-33];
+	//need to calculate the md5 of the concatenated string
+	//using openssl envelope functions from openssl libcrypto
+	EVP_MD_CTX *mdctx;
+        const EVP_MD *md;
+	unsigned char md_value[EVP_MAX_MD_SIZE];
+        int md_len;
+
+	OpenSSL_add_all_digests();
+	mdctx = EVP_MD_CTX_create();
+		md = EVP_get_digestbyname("md5");
+		EVP_DigestInit_ex(mdctx, md, NULL);
+		EVP_DigestUpdate(mdctx, man_id, 49);
+		EVP_DigestFinal_ex(mdctx, md_value, &md_len);
+        //clean up
+		EVP_MD_CTX_destroy(mdctx);
+
+	printf("\nDigest is: ");
+	for(i = 0; i < md_len; i++) printf("%02x", md_value[i]);
+
+	//Create valid id
+		    unsigned char vendor_trailer[9+1] = {0x00,0x00,0x00,0x00,0x00
+							,0x00,0x00,0x00,0x00};
+		    unsigned char vendor_valid_id[28+1];
+		    vendor_valid_id[0] = 0x00;
+		    vendor_valid_id[1] = 0x00;
+		    vendor_valid_id[2] = 0x02;
+		    for(i = 0; i < 16; i++)
+			    vendor_valid_id[i+3] = md_value[i];
+		    for(i = 0; i < 10; i++)
+			    vendor_valid_id[i+19] = vendor_trailer[i];
+		    printf("\nVendor Valid Id = ");
+		    for(i=0; i < 29; i++) printf("%x",vendor_valid_id[i]);
+
+	//write the vendor_valid_id from address 96(0x60) to address 124(0x7b) 
+	printf("\nWrite valid_vendor_id Yes/No?");
+		int ch = 0;
+		ch = getchar();
+		getchar();
+		if ((ch == 'Y') || (ch == 'y'))
+		{
+			printf("Writing Digest wait....\n");
+			xio = wiringPiI2CSetup (0x50);
+				if (xio < 0){
+				fprintf (stderr, "xio: Unable to initialise I2C: %s\n",
+                                strerror (errno));
+				return 1;
+				}
+			for(i = 0; i < 28; i++) {
+			wiringPiI2CWriteReg8(xio, 0x60+i, vendor_valid_id[i]);
+			usleep(50000);//sleep for 0.5ms per byte 
+			}
+		} else printf("nothing written");
+
+	//now need to get the crc32 of the header+md5+trailer
+	crc_32 = crc32(0, vendor_valid_id, 28);
+
+	//printf("\nvalue of returned crc = %x",crc_32);
+		vendor_crc[0] = (int) crc_32 & 0xff; //A50[124]
+		vendor_crc[1] = (int) crc_32 >> 8 & 0xff; //A50[125]
+		vendor_crc[2] = (int) crc_32 >> 16 & 0xff;//A50[126]
+		vendor_crc[3] = (int) crc_32 >> 24 & 0xff;//A50[127]
+		printf("\nCRC32 of the Vendor Padded MD5 =");
+		for(i = 0; i < 4; i++) printf(" %x", vendor_crc[i]);
+	//need to write the crc values to the eeprom
+	//
+	printf("\nWrite CRC32 of the padded Digest in reverse (4 seconds) Yes/No?");
+		ch =0;
+		ch = getchar();
+		getchar();
+		if ((ch == 'Y') || (ch == 'y'))
+		{
+			printf("Writing CRC32 wait....\n");
+			xio = wiringPiI2CSetup (0x50);
+				if (xio < 0){
+				fprintf (stderr, "xio: Unable to initialise I2C: %s\n",
+                                strerror (errno));
+				return 1;
+				}
+			for(i = 0; i < 4; i++)
+			{
+			wiringPiI2CWriteReg8(xio, 0x7c+i,vendor_crc[i]);
+			usleep(50000);//wait 0.5ms per byte
+			}
+		} else printf("nothing written\n");
+	if (write_checksum)
+	{
+	//Calculate the checksum: Add up the first 31 bytes and store
+	//the last 8 bits in the 32nd byte
+	mychecksum(0x0, 0x3f);
+
+	//Calculate the extended checksum: Add up 31 bytes and store
+	//the last 8 bits in the 32nd byte
+	mychecksum(0x40, 0x5f);
+	}
+	return 0;
+}
+
+int mychecksum(unsigned char start_byte, unsigned char end_byte)
+{
+	int sum = 0;
+	int counter;
+	int cc_base;
+	for (counter = start_byte; counter <end_byte; counter++)
+	sum = (A50[counter] + sum);
+	sum = sum & 0x0ff;
+	cc_base = A50[end_byte]; //sum stored in address 63 or 95.
+	if (start_byte == 0x0) printf("\ncc_base = %x, sum = %x",cc_base,sum);
+	else printf("\nextended cc_base = %x and sum = %x\n",cc_base,sum);
+		if (cc_base != sum && write_checksum){
+			printf("\nCheck Sum failed, Do you want to write the"
+			       "	checksum value %x to address byte \"%x\" ?"
+			       "	(Y/N)", sum, end_byte);
+			int ch = 0;
+			ch = getchar();
+			getchar();
+			if ((ch == 'Y') || (ch == 'y')) {
+				xio = wiringPiI2CSetup (0x50);
+				if (xio < 0){
+				fprintf (stderr, "xio: Unable to initialise I2C: %s\n",
+                                strerror (errno));
+				return 1;
+				}
+				printf("end_byte = %x and sum = %x - yes\n",end_byte, sum);
+				wiringPiI2CWriteReg8(xio, end_byte, sum);
+			} else printf("nothing written\n");
+		}
+		return 0;
+}
+
