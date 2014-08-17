@@ -159,7 +159,7 @@ int dump(char *filename)
 	int j;
         unsigned char index_start = 0;
 	unsigned char index_end = 0;
-        int i=0;
+        int i = 0;
         int counter = 0x0;
         FILE *fp;
 
@@ -194,6 +194,7 @@ int dump(char *filename)
                         }
                         index_start = index_end;
                         fprintf(fp,"\n%02x:",i);
+			i = i + 0x10;
                 }
                 fprintf(fp,"  %02x",A50[counter]);
                 counter = counter + 1;
