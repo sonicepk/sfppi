@@ -1,8 +1,8 @@
 sfppi-generic:
 Requires wiringPi - http://wiringpi.com/ and a raspberry Pi......
-To compile gcc -o sfppi-generic sfppi-generic.c -lwiringPi
+To compile gcc -o sfppi-generic sfppi-generic.c -lwiringPi -lm
 
 sfppi-vendor:
 Requires wiringPi - http://wiringpi.com/, openssl, zlib and a raspberry Pi......
 Requires a manufacturer key and a manufacturer id.
-To compile gcc -o sfpp-vendor sfppi-vendor.c -lwiringPi -lcrypto -lz
+To compile gcc -o sfpp-vendor sfppi-vendor.c -lwiringPi -lcrypto -lz -lm
