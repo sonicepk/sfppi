@@ -54,7 +54,6 @@ int main (int argc, char *argv[])
 		case 'c':
 			write_checksum = 1;
 			read_sfp();
-			ciscofy();
 			break;
 		case 'm':
 			dom();
