@@ -307,7 +307,7 @@ int vendor_fy(void)
 	int i;
 
 	//Copy eeprom SFP details into A50
-	if(!read_eeprom()); else exit(EXIT_FAILURE);
+	if(!read_eeprom(0x50)); else exit(EXIT_FAILURE);
 
 	memcpy(&vendor_id, &A50[20],16);
 	memcpy(&serial_id, &A50[68],16);
