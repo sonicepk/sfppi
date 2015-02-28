@@ -1,7 +1,10 @@
-default: sfppi-generic sfpp-vendor
+default: sfppi-generic sfppi-vendor
 
 sfppi-generic:
 	gcc -o sfppi-generic sfppi-generic.c -lwiringPi -lm
 
-sfpp-vendor:
-	gcc -o sfpp-vendor sfppi-vendor.c -lwiringPi -lcrypto -lz -lm
+sfppi-vendor:
+	gcc -o sfppi-vendor sfppi-vendor.c -lwiringPi -lcrypto -lz -lm
+
+clean:
+	$(RM) sfppi-generic sfppi-vendor 
