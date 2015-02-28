@@ -28,7 +28,7 @@
 #include <wiringPiI2C.h>
 #include <errno.h>
 #include <unistd.h>
-#include <math.h> //log
+#include <math.h>
 
 #define VERSION 0.2
 
@@ -183,7 +183,7 @@ int read_sfp(void)
 	//Calculate the extended checksum: Add up 31 bytes and store
 	//the last 8 bits in the 32nd byte
 	mychecksum(0x40, 0x5f);
-	
+
 	//If Digital Diagnostics is enabled and is Internally calibrated print
 	//the DOM values.
 	if (A50[92] & 0x60){

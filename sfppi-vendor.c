@@ -25,12 +25,12 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wiringPi.h>
-#include <wiringPiI2C.h>//wrapper for I2C
-#include <zlib.h>//for CRC32
-#include <openssl/evp.h> //for MD5
+#include <wiringPiI2C.h>
+#include <zlib.h>
+#include <openssl/evp.h>
 #include <errno.h>
-#include <unistd.h> //usleep
-#include <math.h> //log
+#include <unistd.h>
+#include <math.h>
 
 #define VERSION 0.2
 
@@ -449,4 +449,3 @@ int mychecksum(unsigned char start_byte, unsigned char end_byte)
 		}
 		return 0;
 }
-
