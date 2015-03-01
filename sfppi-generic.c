@@ -151,8 +151,8 @@ int read_sfp(void)
 		printf("\nTransceiver is unknown");
 	}
 
-        //3 bytes.60 high order, 61 low order.62 is the
-        //print vendor id bytes 20 to 35
+        //3 bytes.60 high order, 61 low order. Byte 62 is the mantissa
+        //print sfp wavelength 
         cwdm_wave = ((int) A50[60]<<8) | ((int) A50[61]);
         printf("\nWavelength = %d.%d",cwdm_wave,A50[62]);
 

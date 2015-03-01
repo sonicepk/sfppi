@@ -3,7 +3,8 @@
 *
 * 	Author - eoinpk.ek@gmail.com
 *
-*	To compile gcc -o sfpp-vendor sfppi-vendor.c -lwiringPi -lcrypto -lz
+*	To compile gcc -o sfppi-vendor sfppi-vendor.c -lwiringPi -lcrypto -lz
+*	-lm
 *
 *       sfppi-vendor is free software: you can redistribute it and/or modify
 *       it under the terms of the GNU Lesser General Public License as
@@ -154,8 +155,8 @@ int read_sfp(void)
 		printf("\nTransceiver is unknown");
 	}
 
-        //3 bytes.60 high order, 61 low order.62 is the
-        //print vendor id bytes 20 to 35
+        //3 bytes.60 high order, 61 low order, byte 62 is the mantissa
+        //print sfp wavelength 
         cwdm_wave = ((int) A50[60]<<8) | ((int) A50[61]);
         printf("\nWavelength = %d.%d",cwdm_wave,A50[62]);
 
