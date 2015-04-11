@@ -1,0 +1,4 @@
+- Add password support for eeproms with passwords
+- Add feature to upload eeprom dump image file
+- Support tuning of tunable SFP+/XFP. I expect this may not be possible, as one tunable XFP I have tested returns to a default wavelength of 1550.12nm once power is removed. 
+- remove Wiringpi library with i2c library

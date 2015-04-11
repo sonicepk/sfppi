@@ -6,3 +6,6 @@ sfppi-vendor:
 Requires wiringPi - http://wiringpi.com/, openssl, zlib and a raspberry Pi......
 Requires a manufacturer key and a manufacturer id.
 To compile gcc -o sfpp-vendor sfppi-vendor.c -lwiringPi -lcrypto -lz -lm
+
+For most people you should be able to just run make once you have all the dependencies above installed. 
+Beaglebone support. Thanks to ymitsos. Just uncomment the Beaglebone reference at the top of the makefile. 
