@@ -1,4 +1,5 @@
-BEAGLEBONE =aa
+#Uncomment for Beaglebone
+#BEAGLEBONE =aa
 
 default: sfppi-generic sfppi-vendor
 
