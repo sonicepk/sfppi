@@ -52,7 +52,7 @@ int xio,write_checksum;
 unsigned char A50[256]; //only interested in the first 128 bytes
 unsigned char A51[256];
 #ifdef BEAGLEBONE
-char filenm[20]="/dev/i2c-2";
+char filenm[20]="/dev/i2c-1";
 #endif
 
 int main (int argc, char *argv[])
@@ -267,7 +267,7 @@ int read_eeprom(unsigned char address)
                 return 1;
         }
 #else
-    char filenm[20]="/dev/i2c-2"; //i2c bus number must be modified accordingly
+    char filenm[20]="/dev/i2c-1"; //i2c bus number must be modified accordingly
 
     xio = open(filenm, O_RDWR);
 	if (xio < 0) {
