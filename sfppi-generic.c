@@ -216,7 +216,7 @@ int dump(char *filename)
 
 	fp=fopen(filename,"w");
         if (fp == NULL) {
-                 fprintf (stderr, "File not created okay, errno = %d\n",
+                 fprintf (stderr, "File not created okay, errno = %s\n",
 				 strerror (errno));
                 return 1;
         }

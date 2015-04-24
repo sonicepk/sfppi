@@ -221,7 +221,7 @@ int dump(char *filename)
 
 	fp=fopen(filename,"w");
         if (fp == NULL) {
-                 fprintf (stderr, "File not created okay, errno = %d\n",
+                 fprintf (stderr, "File not created okay, errno = %s\n",
 				 strerror (errno));
                 return 1;
         }
@@ -376,7 +376,7 @@ int vendor_fy(void)
 		    unsigned char vendor_valid_id[28+1];
 		    vendor_valid_id[0] = 0x00;
 		    vendor_valid_id[1] = 0x00;
-		    vendor_valid_id[2] = 0x02;
+		    vendor_valid_id[2] = man_id[0];//first byte of man_id.
 		    for(i = 0; i < 16; i++)
 			    vendor_valid_id[i+3] = md_value[i];
 		    for(i = 0; i < 10; i++)
